@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Wolf Feeder</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    button { margin-top: 10px; padding: 8px 16px; font-size: 16px; }
+    select, input { padding: 6px; font-size: 14px; margin-bottom: 10px; width: 300px; }
+  </style>
+</head>
+<body>
+  <h1>🐺 Wolf Feeder</h1>
+  <p>This will prompt <strong>Rabby</strong> to feed your wolves once per day.</p>
+
+  <label for="victimAddress">Victim Address:</label><br>
+  <input type="text" id="victimAddress" placeholder="Enter victim address" value="0x1C768F9C263f85cac55846011cC4a194fEa5FF11" /><br>
+
+  <button onclick="feedAllWolves()">Feed All Wolves</button>
+
+  <p id="status"></p>
+
+  <script>
+    const CONTRACT_ADDRESS = "0xf1152a195B93d51457633F96B81B1CF95a96E7A7"; // updated to correct contract
+    const ABI = [
+      "function eatSheep(address _victim, uint256 _wolfID) external"
+    ];
+    const WOLF_IDS = [235, 421, 14, 564, 549, 176, 236, 382, 198, 359];
+
+    async function feedAllWolves() {
+      const status = document.getElementById("status");
+      const victimAddress = document.getElementById("victimAddress").value.trim();
+      status.innerText = "Requesting Rabby...";
+
+      if (!window.ethereum || !window.ethereum.isRabby) {
+        status.innerText = "Rabby not detected. Please ensure Rabby is installed and active.";
+        return;
+      }
+
+      try {
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        await provider.send("eth_requestAccounts", []);
+        const network = await provider.getNetwork();
+
+        if (network.chainId !== 146) {
+          status.innerText = "Please switch your wallet to Sonic Mainnet (Chain ID 146).";
+          return;
+        }
+
+        const signer = provider.getSigner();
+        const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+
+        for (const wolfId of WOLF_IDS) {
+          status.innerText = `Feeding Wolf #${wolfId}...`;
+          const tx = await contract.eatSheep(victimAddress, wolfId);
+          status.innerText = `Transaction sent for Wolf #${wolfId}! TX: ${tx.hash}`;
+          await tx.wait();
+          status.innerText = `✅ Wolf #${wolfId} has been fed successfully!`;
+        }
+
+        status.innerText = "✅ All wolves fed successfully!";
+      } catch (err) {
+        console.error(err);
+        status.innerText = `❌ Error: ${err.message}`;
+      }
+    }
+  </script>
+</body>
+</html>
