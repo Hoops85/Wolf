@@ -45,6 +45,7 @@
     #status {
       margin-top: 20px;
       font-weight: bold;
+      white-space: pre-line;
     }
   </style>
 </head>
@@ -89,15 +90,20 @@
         const signer = provider.getSigner();
         const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
 
+        let feedResults = "";
         for (const wolfId of WOLF_IDS) {
-          status.innerText = `Feeding Wolf #${wolfId}...`;
-          const tx = await contract.eatSheep(victimAddress, wolfId);
-          status.innerText = `Transaction sent for Wolf #${wolfId}! TX: ${tx.hash}`;
-          await tx.wait();
-          status.innerText = `✅ Wolf #${wolfId} has been fed successfully!`;
+          status.innerText = feedResults + `\nFeeding Wolf #${wolfId}...`;
+          try {
+            const tx = await contract.eatSheep(victimAddress, wolfId);
+            status.innerText = feedResults + `\nTransaction sent for Wolf #${wolfId}! TX: ${tx.hash}`;
+            await tx.wait();
+            feedResults += `\n✅ Wolf #${wolfId} has been fed successfully!`;
+          } catch (e) {
+            feedResults += `\n❌ Failed to feed Wolf #${wolfId}: ${e.message}`;
+          }
         }
 
-        status.innerText = "✅ All wolves fed successfully!";
+        status.innerText = feedResults + "\n\n✅ All wolves processed.";
       } catch (err) {
         console.error(err);
         status.innerText = `❌ Error: ${err.message}`;
